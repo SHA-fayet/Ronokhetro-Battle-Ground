@@ -1,9 +1,10 @@
+from OpenGL.GLUT import GLUT_BITMAP_HELVETICA_18
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 import math
 import time
-from OpenGL.GLUT import GLUT_BITMAP_HELVETICA_18
+
 # --- Game Configuration & State ---
 
 # Camera-related variables
@@ -16,11 +17,13 @@ WALL_HEIGHT = 50
 
 # --- Player Tank State ---
 tank_pos = [0, 10, 0] # x, y, z position.
-tank_angle = 0.0 # The direction the tank is facing in degrees.
-TANK_MOVE_SPEED = 800.0 # Units per second
-TANK_ROTATE_SPEED = 400.0 # Degrees per second
+tank_angle = 0.0 # The direction the tank body is facing.
+turret_angle = 0.0 # The direction the turret is facing, relative to the body.
+TANK_MOVE_SPEED = 250.0 # Units per second
+TANK_ROTATE_SPEED = 100.0 # Degrees per second
+TURRET_ROTATE_SPEED = 120.0 # Degrees per second for the turret
 
-# --- NEW: Bullet Properties ---
+# --- Bullet Properties ---
 bullets = [] # A list to store all active bullets.
 BULLET_SPEED = 250.0 # Speed of the shells.
 
@@ -110,6 +113,10 @@ def draw_player_tank():
     glutSolidCube(1)
     glPopMatrix()
 
+    # --- NEW: Turret and Cannon now have their own rotation ---
+    glPushMatrix()
+    glRotatef(turret_angle, 0, 1, 0) # Apply turret rotation
+
     # Turret
     glColor3f(0.25, 0.55, 0.25)
     glPushMatrix()
@@ -125,7 +132,9 @@ def draw_player_tank():
     gluCylinder(gluNewQuadric(), 4, 4, 40, 10, 10)
     glPopMatrix()
     
-    glPopMatrix()
+    glPopMatrix() # End turret/cannon transformations
+    
+    glPopMatrix() # End tank transformations
 
 def draw_bullets():
     """Draws all active bullets."""
@@ -141,36 +150,33 @@ def draw_bullets():
 def update_bullets():
     """Updates the position of each bullet and removes it if it goes off-screen."""
     global bullets
-    # Iterate over a copy of the list to safely remove items during iteration
     for bullet in bullets[:]:
-        # Calculate movement based on the bullet's direction vector
         bullet['pos'][0] += bullet['dir'][0] * BULLET_SPEED * delta_time
         bullet['pos'][2] += bullet['dir'][2] * BULLET_SPEED * delta_time
         
-        # Check if bullet is out of the arena bounds
         if not (-ARENA_SIZE < bullet['pos'][0] < ARENA_SIZE and -ARENA_SIZE < bullet['pos'][2] < ARENA_SIZE):
             bullets.remove(bullet)
 
 def fire_bullet():
     """Creates a new bullet and adds it to the active bullets list."""
-    global tank_angle, tank_pos
+    # The final angle is the sum of the body's angle and the turret's relative angle
+    final_angle = tank_angle + turret_angle
+    angle_rad = math.radians(final_angle)
     
-    # Calculate the bullet's direction vector
-    angle_rad = math.radians(tank_angle)
-    # FIX: Corrected direction vector to match the visual model
     dir_x = math.sin(angle_rad)
     dir_z = math.cos(angle_rad)
 
     # Calculate the bullet's starting position at the tip of the cannon
-    cannon_length = 50.0 # Approximate length from tank center to cannon tip
-    start_x = tank_pos[0] + dir_x * cannon_length
-    start_z = tank_pos[2] + dir_z * cannon_length
-    start_y = 17 # Height of the cannon
+    # This also needs to account for the tank's body rotation
+    body_angle_rad = math.radians(tank_angle)
+    cannon_offset_z = 50.0
+    start_x = tank_pos[0] + math.sin(body_angle_rad) * cannon_offset_z
+    start_z = tank_pos[2] + math.cos(body_angle_rad) * cannon_offset_z
+    start_y = 17
 
-    # Add the new bullet to the list
     bullets.append({
         'pos': [start_x, start_y, start_z],
-        'dir': [dir_x, 0, dir_z] # Y-direction is 0 for horizontal movement
+        'dir': [dir_x, 0, dir_z]
     })
 
 # --- Input Handlers ---
@@ -181,32 +187,42 @@ def keyboardListener(key, x, y):
 
     move_amount = TANK_MOVE_SPEED * delta_time
     rotate_amount = TANK_ROTATE_SPEED * delta_time
+    
+    # Calculate potential next position
+    angle_rad = math.radians(tank_angle)
+    next_pos = list(tank_pos) # Create a copy
 
-    # FIX: Corrected movement vectors to match the visual model
     if key == b'w':
-        # Move forward based on the current angle
-        angle_rad = math.radians(tank_angle)
-        tank_pos[0] += math.sin(angle_rad) * move_amount
-        tank_pos[2] += math.cos(angle_rad) * move_amount
+        next_pos[0] += math.sin(angle_rad) * move_amount
+        next_pos[2] += math.cos(angle_rad) * move_amount
     if key == b's':
-        # Move backward
-        angle_rad = math.radians(tank_angle)
-        tank_pos[0] -= math.sin(angle_rad) * move_amount
-        tank_pos[2] -= math.cos(angle_rad) * move_amount
+        next_pos[0] -= math.sin(angle_rad) * move_amount
+        next_pos[2] -= math.cos(angle_rad) * move_amount
+    
+    # --- NEW: Arena Boundary Check ---
+    # Check if the next position is inside the arena walls (with a small buffer)
+    buffer = 25 # Half of the tank's length
+    if -ARENA_SIZE + buffer < next_pos[0] < ARENA_SIZE - buffer and \
+       -ARENA_SIZE + buffer < next_pos[2] < ARENA_SIZE - buffer:
+        tank_pos = next_pos # Only update position if it's valid
+
     if key == b'a':
-        # Rotate left (counter-clockwise)
         tank_angle += rotate_amount
     if key == b'd':
-        # Rotate right (clockwise)
         tank_angle -= rotate_amount
 
 def specialKeyListener(key, x, y):
-    """Handles special key inputs (arrow keys)."""
-    pass
+    """Handles special key inputs for turret rotation."""
+    global turret_angle
+    rotate_amount = TURRET_ROTATE_SPEED * delta_time
+    
+    if key == GLUT_KEY_LEFT:
+        turret_angle += rotate_amount
+    if key == GLUT_KEY_RIGHT:
+        turret_angle -= rotate_amount
 
 def mouseListener(button, state, x, y):
     """Handles mouse inputs for firing bullets."""
-    # Fire on left mouse button press
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
         fire_bullet()
 
@@ -232,7 +248,6 @@ def idle():
     delta_time = current_time - last_frame_time
     last_frame_time = current_time
     
-    # --- NEW: Update game logic every frame ---
     update_bullets()
     
     glutPostRedisplay()
@@ -248,11 +263,11 @@ def showScreen():
     # Draw all game elements
     draw_arena()
     draw_player_tank()
-    draw_bullets() # --- NEW: Draw the bullets ---
+    draw_bullets()
 
     # Display game info text
     draw_text(10, 770, f"Tank Angle: {tank_angle:.2f}")
-    draw_text(10, 740, f"Tank Pos: X={tank_pos[0]:.2f}, Z={tank_pos[2]:.2f}")
+    draw_text(10, 740, f"Turret Angle: {turret_angle:.2f}")
     draw_text(10, 710, f"Active Shells: {len(bullets)}")
 
     glutSwapBuffers()
@@ -278,6 +293,9 @@ def main():
     last_frame_time = time.time()
 
     glutMainLoop()
+
+if __name__ == "__main__":
+    main()
 
 if __name__ == "__main__":
     main()
