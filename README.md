@@ -1,63 +1,75 @@
-# Ronokhetro-Battle-Ground
+Ronokhetro: 3D Tank Arena 💣
+Ronokhetro (Bengali for "Battlefield") is a fast-paced 3D tank shooter built from the ground up using Python and the PyOpenGL library. Take control of your tank and survive against endless waves of increasingly difficult enemies in a dynamic arena. Use your score to upgrade your tank and become an unstoppable force!
+
+<img width="1249" height="928" alt="image" src="https://github.com/user-attachments/assets/80a35096-224f-40b1-b88b-eade1d7393f9" />
 
 
-Project Name: Ronokhetro (রণক্ষেত্র )
-Core Features:
-Arena Skirmish: The primary game mode. You control your tank in a walled arena against a set number of enemy tanks. The goal is to be the last tank standing.
-Wave Survival: An intense mode where you face endless, increasingly difficult waves of enemy tanks. The goal is to survive as long as possible and achieve a high score.
-Dynamic Arena: The battlefield contains destructible obstacles (cuboid barriers). These can be used for cover but will be destroyed after taking enough damage.
-Power-Up Drops: Special items that randomly spawn on the map, providing temporary advantages when collected.
-Enemy Variants: The game will feature at least two types of enemy AI tanks:
-Scouts: Smaller, faster tanks with weaker armor.
-Juggernauts: Larger, slower tanks with heavy armor and stronger cannons.
-Cheat Modes: Special functions the player can toggle to gain an unfair advantage, perfect for testing and fun.
+✨ Key Features
+Endless Wave System: Face off against progressively harder waves of enemy scout and juggernaut tanks. The battle only ends when you do!
 
-Power-Up Drops Detailed:
-Armor Repair: A green-glowing cube that instantly restores 25% of your tank's armor (health).
-Rapid Fire: A yellow-glowing cylinder that doubles your tank's firing speed for 10 seconds.
-Ammo Crate: A standard cube that instantly refills your shell ammunition to the maximum.
-Engine Boost: A blue-glowing sphere that increases your tank's movement and rotation speed by 50% for 10 seconds.
+Epic Boss Battles: Every third wave, a powerful Boss Tank appears! This massive enemy features higher health and a devastating three-shot spread attack that will test your skills.
 
-Cheat Modes Detailed:
-Infinite Shells: Your ammunition count never decreases, allowing for endless firing.
-EMP Blast: Press a key to emit an energy pulse that freezes all enemy tanks in place for 3 seconds.
-Auto-Turret Lock: Your tank's turret will automatically lock onto the nearest enemy and fire whenever possible. You still have full control over your tank's movement.
+Tank Upgrade System: Don't just survive—evolve! Use the score you earn from destroying enemies to purchase permanent upgrades for your tank in real-time:
 
+Armor (U): Increase your maximum health to withstand more punishment.
 
-1. Camera Shake on Hit
-When your tank gets hit, apply a small screen shake effect by shifting the camera a few units randomly.
+Cannon (I): Boost your fire rate to overwhelm your foes.
 
+Speed (O): Enhance your movement and rotation speed to outmaneuver the enemy.
 
-Simple and adds a strong impact feeling.
-2. Day/Night Lighting Cycle
-Slowly transition between day → evening → night → morning by changing:
+Environmental Hazards: The arena is not always a safe place! Watch out for dangerous lava pits that will rapidly drain your health if you drive through them.
 
+Dynamic Day/Night Cycle & Weather: The battle rages on through a full day/night cycle that affects the ambient lighting. During the darkest parts of the night, rain will fall, adding to the atmosphere.
 
-Light color (yellowish → orange → dark blue → white).
+🎮 How to Play
+The controls are simple and intuitive, designed to get you right into the action.
 
+Action	Control
+Move Forward	W Key
+Move Backward	S Key
+Rotate Tank Left	A Key
+Rotate Tank Right	D Key
+Aim Turret Left	Left Arrow Key
+Aim Turret Right	Right Arrow Key
+Fire Cannon	Left Mouse Button
+Upgrade Armor	U Key (costs score)
+Upgrade Cannon	I Key (costs score)
+Upgrade Speed	O Key (costs score)
+Restart Game	R Key (after Game Over)
 
-Sky color (clear → purple → dark → light)
-3. Camera Shake on Hit
-When your tank gets hit, apply a small screen shake effect by shifting the camera a few units randomly.
+Export to Sheets
+🛠️ Technical Details
+This project is a demonstration of classic, immediate-mode OpenGL programming. It does not use modern shaders but instead relies on the fixed-function pipeline for rendering.
 
+Language: Python 3
 
-Simple and adds a strong impact feeling.
-4. Health Bar Above Tanks
-Render a small colored quad just above each tank showing remaining health.
-5. Simple Shadows (Projected)
-Draw a flattened black copy of the tank on the ground plane.
+Graphics API: OpenGL
 
-Features added by (Siam):
-Environmental Hazards – Landmines, lava pits, or falling cubes that damage tanks when touched.
+Libraries:
 
+PyOpenGL and PyOpenGL-accelerate for OpenGL bindings.
 
-Dynamic Weather Effects – Rain, fog, and day–night cycle that change visibility and lighting.
+GLUT (OpenGL Utility Toolkit) for windowing and event handling.
 
+🚀 Setup and Installation
+To run this project on your local machine, follow these simple steps:
 
-Ricochet Shells – Special bullets that bounce off arena walls before disappearing.
+Clone the repository:
 
+Bash
 
-Boss Tank Battles – Powerful enemy tanks appearing after certain waves with unique attacks.
+git clone https://github.com/your-username/your-repo-name.git
+cd your-repo-name
+Install the required dependencies:
+This project requires PyOpenGL and PyOpenGL-accelerate. You can install them using pip.
 
+Bash
 
-Tank Upgrade System(Extra if possible) – Players can enhance armor, cannon, and speed using collected points.
+pip install PyOpenGL PyOpenGL-accelerate
+Run the game:
+Execute the Python script from your terminal.
+
+Bash
+
+python your_script_name.py
+Enjoy the battle!
