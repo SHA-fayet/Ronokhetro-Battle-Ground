@@ -574,7 +574,9 @@ def keyboardListener(key, x, y):
         tank_angle += rotate_amount
     if key == b'd':
         tank_angle -= rotate_amount
-    
+    if key == b'r':
+        reset_game()
+        
     # --- NEW: Cheat Mode Toggles ---
     if key == b'1':
         cheat_infinite_shells = not cheat_infinite_shells
@@ -724,4 +726,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
