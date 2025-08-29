@@ -8,8 +8,13 @@ from OpenGL.GLUT import GLUT_BITMAP_HELVETICA_18
 # --- Game Configuration & State ---
 
 # Camera-related variables
-camera_pos = (0, 250, 450) 
+camera_pos = (0, 300, 450) 
 fovY = 60
+
+# Camera shake effect variables
+camera_shake_intensity = 0.0
+camera_shake_duration = 0.0
+camera_shake_start_time = 0.0
 
 # Arena properties
 ARENA_SIZE = 300
@@ -64,6 +69,7 @@ last_player_fire_time = 0.0
 # --- Timekeeping ---
 last_frame_time = 0.0
 delta_time = 0.0
+timeOfDay = 0.0
 
 # --- Drawing Functions ---
 
@@ -84,6 +90,54 @@ def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
     glMatrixMode(GL_PROJECTION)
     glPopMatrix()
     glMatrixMode(GL_MODELVIEW)
+
+def draw_health_bar_3d(x, y, z, current_health, max_health, width=20, height=2):
+    """Draws a 3D health bar above a tank."""
+    # Calculate health percentage
+    health_ratio = max(0, min(1, current_health / max_health))
+    
+    # Set color based on health (green -> yellow -> red)
+    if health_ratio > 0.6:
+        glColor3f(0.0, 1.0, 0.0)  # Green
+    elif health_ratio > 0.3:
+        glColor3f(1.0, 1.0, 0.0)  # Yellow
+    else:
+        glColor3f(1.0, 0.0, 0.0)  # Red
+    
+    # Draw health bar background (dark gray)
+    glPushMatrix()
+    glTranslatef(x, y, z)
+    
+    # Background
+    glColor3f(0.3, 0.3, 0.3)
+    glBegin(GL_QUADS)
+    glVertex3f(-width/2, 0, -height/2)
+    glVertex3f(width/2, 0, -height/2)
+    glVertex3f(width/2, 0, height/2)
+    glVertex3f(-width/2, 0, height/2)
+    glEnd()
+    
+    # Health bar (colored portion)
+    if health_ratio > 0:
+        # Set color based on health
+        if health_ratio > 0.6:
+            glColor3f(0.0, 1.0, 0.0)  # Green
+        elif health_ratio > 0.3:
+            glColor3f(1.0, 1.0, 0.0)  # Yellow
+        else:
+            glColor3f(1.0, 0.0, 0.0)  # Red
+        
+        # Calculate width of health bar
+        health_width = width * health_ratio
+        
+        glBegin(GL_QUADS)
+        glVertex3f(-width/2, 0.01, -height/2)
+        glVertex3f(-width/2 + health_width, 0.01, -height/2)
+        glVertex3f(-width/2 + health_width, 0.01, height/2)
+        glVertex3f(-width/2, 0.01, height/2)
+        glEnd()
+    
+    glPopMatrix()
 
 def draw_arena():
     """Draws the arena floor and the four surrounding walls."""
@@ -120,6 +174,53 @@ def draw_arena():
     glVertex3f(ARENA_SIZE, WALL_HEIGHT, ARENA_SIZE)
     glVertex3f(ARENA_SIZE, WALL_HEIGHT, -ARENA_SIZE)
     glEnd()
+
+def draw_player_shadow():
+    """Draws the player tank's shadow on the ground."""
+    # Set shadow color (dark gray/black)
+    glColor3f(0.3, 0.3, 0.3)
+    
+    # Draw main body shadow as a quad
+    glPushMatrix()
+    glTranslatef(tank_pos[0], 0.5, tank_pos[2])  # Slightly above ground
+    glRotatef(tank_angle, 0, 1, 0)
+    
+    # Tank body shadow
+    glBegin(GL_QUADS)
+    glVertex3f(-20, 0, -35)  # Front left
+    glVertex3f(20, 0, -35)   # Front right
+    glVertex3f(20, 0, 35)    # Back right
+    glVertex3f(-20, 0, 35)   # Back left
+    glEnd()
+    
+    # Left tread shadow
+    glBegin(GL_QUADS)
+    glVertex3f(-35, 0, -40)  # Front left
+    glVertex3f(-20, 0, -40)  # Front right
+    glVertex3f(-20, 0, 40)   # Back right
+    glVertex3f(-35, 0, 40)   # Back left
+    glEnd()
+    
+    # Right tread shadow
+    glBegin(GL_QUADS)
+    glVertex3f(20, 0, -40)   # Front left
+    glVertex3f(35, 0, -40)   # Front right
+    glVertex3f(35, 0, 40)    # Back right
+    glVertex3f(20, 0, 40)    # Back left
+    glEnd()
+    
+    # Turret shadow
+    glPushMatrix()
+    glRotatef(turret_angle, 0, 1, 0)
+    glBegin(GL_QUADS)
+    glVertex3f(-15, 0, -15)  # Front left
+    glVertex3f(15, 0, -15)   # Front right
+    glVertex3f(15, 0, 15)    # Back right
+    glVertex3f(-15, 0, 15)   # Back left
+    glEnd()
+    glPopMatrix()
+    
+    glPopMatrix()
 
 def draw_player_tank():
     """Draws the player's tank using basic shapes."""
@@ -166,6 +267,9 @@ def draw_player_tank():
     glPopMatrix() 
     
     glPopMatrix() 
+    
+    # Draw player health bar
+    draw_health_bar_3d(tank_pos[0], tank_pos[1] + 40, tank_pos[2], player_health, 100, 25, 3)
 
 def draw_bullets():
     """Draws all active bullets from both player and enemies."""
@@ -237,6 +341,63 @@ def draw_enemy_tanks():
         glPopMatrix()
 
         glPopMatrix()
+        
+        # Draw enemy health bar
+        max_health = 20 if enemy['type'] == 'juggernaut' else 10
+        health_bar_width = 30 if enemy['type'] == 'juggernaut' else 25
+        health_bar_height = 4 if enemy['type'] == 'juggernaut' else 3
+        y_offset = 50 if enemy['type'] == 'juggernaut' else 40
+        
+        draw_health_bar_3d(enemy['pos'][0], enemy['pos'][1] + y_offset, enemy['pos'][2], 
+                          enemy['health'], max_health, health_bar_width, health_bar_height)
+
+def draw_enemy_shadows():
+    """Draws shadows for all enemy tanks on the ground."""
+    # Set shadow color (dark gray/black)
+    glColor3f(0.3, 0.3, 0.3)
+    
+    for enemy in enemies:
+        # Calculate scale factor for different enemy types
+        scale_factor = 1.2 if enemy['type'] == 'juggernaut' else 1.0
+        
+        glPushMatrix()
+        glTranslatef(enemy['pos'][0], 0.5, enemy['pos'][2])  # Slightly above ground
+        glRotatef(enemy['angle'], 0, 1, 0)
+        glScalef(scale_factor, 1.0, scale_factor)
+        
+        # Enemy body shadow
+        glBegin(GL_QUADS)
+        glVertex3f(-20, 0, -35)  # Front left
+        glVertex3f(20, 0, -35)   # Front right
+        glVertex3f(20, 0, 35)    # Back right
+        glVertex3f(-20, 0, 35)   # Back left
+        glEnd()
+        
+        # Left tread shadow
+        glBegin(GL_QUADS)
+        glVertex3f(-35, 0, -40)  # Front left
+        glVertex3f(-20, 0, -40)  # Front right
+        glVertex3f(-20, 0, 40)   # Back right
+        glVertex3f(-35, 0, 40)   # Back left
+        glEnd()
+        
+        # Right tread shadow
+        glBegin(GL_QUADS)
+        glVertex3f(20, 0, -40)   # Front left
+        glVertex3f(35, 0, -40)   # Front right
+        glVertex3f(35, 0, 40)    # Back right
+        glVertex3f(20, 0, 40)    # Back left
+        glEnd()
+        
+        # Turret shadow
+        glBegin(GL_QUADS)
+        glVertex3f(-15, 0, -15)  # Front left
+        glVertex3f(15, 0, -15)   # Front right
+        glVertex3f(15, 0, 15)    # Back right
+        glVertex3f(-15, 0, 15)   # Back left
+        glEnd()
+        
+        glPopMatrix()
 
 def draw_obstacles():
     """Draws all destructible obstacles."""
@@ -255,6 +416,25 @@ def draw_obstacles():
         glutSolidCube(1)
         glPopMatrix()
 
+def draw_obstacle_shadows():
+    """Draws shadows for all obstacles on the ground."""
+    # Set shadow color (dark gray/black)
+    glColor3f(0.3, 0.3, 0.3)
+    
+    for obstacle in obstacles:
+        glPushMatrix()
+        glTranslatef(obstacle['pos'][0], 0.5, obstacle['pos'][2])  # Slightly above ground
+        
+        # Draw obstacle shadow as a square
+        glBegin(GL_QUADS)
+        glVertex3f(-15, 0, -15)  # Front left
+        glVertex3f(15, 0, -15)   # Front right
+        glVertex3f(15, 0, 15)    # Back right
+        glVertex3f(-15, 0, 15)   # Back left
+        glEnd()
+        
+        glPopMatrix()
+
 def draw_power_ups():
     """Draws all active power-ups."""
     for power_up in power_ups:
@@ -271,6 +451,32 @@ def draw_power_ups():
         elif power_up['type'] == 'speed':
             glColor3f(0.1, 0.1, 1.0)
             gluSphere(gluNewQuadric(), 10, 10, 10)
+        
+        glPopMatrix()
+
+def draw_power_up_shadows():
+    """Draws shadows for all power-ups on the ground."""
+    # Set shadow color (dark gray/black)
+    glColor3f(0.3, 0.3, 0.3)
+    
+    for power_up in power_ups:
+        glPushMatrix()
+        glTranslatef(power_up['pos'][0], 0.5, power_up['pos'][2])  # Slightly above ground
+        
+        # Draw power-up shadow as a circle using GL_TRIANGLE_FAN
+        glBegin(GL_TRIANGLE_FAN)
+        glVertex3f(0, 0, 0)  # Center of circle
+        
+        # Draw circle with 32 segments for smooth appearance
+        radius = 10
+        segments = 32
+        for i in range(segments + 1):
+            angle = 2.0 * math.pi * i / segments
+            x = radius * math.cos(angle)
+            z = radius * math.sin(angle)
+            glVertex3f(x, 0, z)
+        
+        glEnd()
         
         glPopMatrix()
 
@@ -459,6 +665,13 @@ def resolve_collisions():
     tank_pos[0] = max(-ARENA_SIZE + buffer, min(ARENA_SIZE - buffer, tank_pos[0]))
     tank_pos[2] = max(-ARENA_SIZE + buffer, min(ARENA_SIZE - buffer, tank_pos[2]))
 
+def trigger_camera_shake(intensity=15.0, duration=0.3):
+    """Triggers a camera shake effect with the specified intensity and duration."""
+    global camera_shake_intensity, camera_shake_duration, camera_shake_start_time
+    camera_shake_intensity = intensity
+    camera_shake_duration = duration
+    camera_shake_start_time = time.time()
+
 
 def check_bullet_collisions():
     """Checks for all bullet-related collisions."""
@@ -493,6 +706,7 @@ def check_bullet_collisions():
         if dist_sq < player_radius_sq:
             if bullet in enemy_bullets: enemy_bullets.remove(bullet)
             player_health -= 10
+            trigger_camera_shake(15.0, 0.3)  # Trigger camera shake when hit
             hit = True
         if hit: continue
         for obstacle in obstacles[:]:
@@ -550,6 +764,29 @@ def enemy_fire_bullet(enemy):
         'dir': [dir_x, 0, dir_z]
     })
 
+def dayNightCycle():
+    global timeOfDay
+    # Update time manually - slower transition
+    timeOfDay += 0.002  # Reduced from 0.002 to make transition slower
+    if timeOfDay > 2 * math.pi:
+        timeOfDay -= 2 * math.pi
+
+    # Sky color changes with better visibility
+    # Day: bright blue sky, Night: dark blue (not black) for visibility
+    r = 0.1 + 0.4 * (math.sin(timeOfDay) * 0.5 + 0.5)  # 0.1 to 0.5 range
+    g = 0.2 + 0.5 * (math.sin(timeOfDay) * 0.5 + 0.5)  # 0.2 to 0.7 range  
+    b = 0.3 + 0.6 * (math.sin(timeOfDay) * 0.5 + 0.5)  # 0.3 to 0.9 range
+
+
+    # Clamp values
+    r = max(0.1, min(1.0, r))  # Minimum 0.1 for visibility
+    g = max(0.2, min(1.0, g))  # Minimum 0.2 for visibility
+    b = max(0.3, min(1.0, b))  # Minimum 0.3 for visibility
+
+    # Set sky color and clear screen
+    glClearColor(r, g, b, 1.0)
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+
 # --- Input Handlers ---
 
 def keyboardListener(key, x, y):
@@ -574,9 +811,7 @@ def keyboardListener(key, x, y):
         tank_angle += rotate_amount
     if key == b'd':
         tank_angle -= rotate_amount
-    if key == b'r':
-        reset_game()
-        
+    
     # --- NEW: Cheat Mode Toggles ---
     if key == b'1':
         cheat_infinite_shells = not cheat_infinite_shells
@@ -628,8 +863,36 @@ def reshape(w, h):
 
 def setupCamera():
     """Configures the camera's view matrix (point of view)."""
+    global camera_shake_intensity, camera_shake_duration, camera_shake_start_time
+    
     glLoadIdentity()
-    gluLookAt(camera_pos[0], camera_pos[1], camera_pos[2], 0, 0, 0, 0, 1, 0)
+    
+    # Apply camera shake effect
+    shake_x, shake_y, shake_z = 0, 0, 0
+    current_time = time.time()
+    
+    if camera_shake_intensity > 0 and current_time - camera_shake_start_time < camera_shake_duration:
+        # Calculate shake based on time elapsed
+        elapsed = current_time - camera_shake_start_time
+        shake_factor = 1.0 - (elapsed / camera_shake_duration)  # Fade out over time
+        
+        # Generate random shake offset
+        shake_x = random.uniform(-camera_shake_intensity, camera_shake_intensity) * shake_factor
+        shake_y = random.uniform(-camera_shake_intensity, camera_shake_intensity) * shake_factor
+        shake_z = random.uniform(-camera_shake_intensity, camera_shake_intensity) * shake_factor
+    else:
+        # Reset shake when duration is over
+        camera_shake_intensity = 0.0
+        camera_shake_duration = 0.0
+    
+    # Apply shake to camera position
+    shaken_camera_pos = (
+        camera_pos[0] + shake_x,
+        camera_pos[1] + shake_y,
+        camera_pos[2] + shake_z
+    )
+    
+    gluLookAt(shaken_camera_pos[0], shaken_camera_pos[1], shaken_camera_pos[2], 0, 0, 0, 0, 1, 0)
 
 def idle():
     """Idle function that runs continuously."""
@@ -671,9 +934,20 @@ def showScreen():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     
     setupCamera()
+    dayNightCycle()
 
     # Draw all game elements
     draw_arena()
+
+    #draw shadows
+    if not game_over:
+        draw_player_shadow()
+    draw_enemy_shadows()
+    draw_obstacle_shadows()
+    draw_power_up_shadows()
+
+
+    #draw tanks, obstacles, power-ups
     if not game_over:
         draw_player_tank()
     draw_bullets()
@@ -726,3 +1000,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
