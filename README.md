@@ -58,7 +58,7 @@ Clone the repository:
 
 Bash
 
-git clone https://github.com/your-username/your-repo-name.git
+git clone https://github.com/SHA-fayet/Ronokhetro-Battle_Ground.git
 cd your-repo-name
 Install the required dependencies:
 This project requires PyOpenGL and PyOpenGL-accelerate. You can install them using pip.
