@@ -20,19 +20,18 @@ ARENA_SIZE = 300
 WALL_HEIGHT = 50
 
 # --- Player Tank State ---
-tank_pos = [0, 10, 0]
+tank_pos = [0, 10, 0] # tank's initial position
 tank_angle = 0.0
 turret_angle = 0.0
 player_health = 100
 last_player_fire_time = 0.0
-# MODIFIED: Player stats are now variables for the upgrade system
+# Player stats variables for the upgrade system
 max_player_health = 100
 player_fire_cooldown = 0.5
-TANK_MOVE_SPEED = 150.0 # This was 800.0 in your code, which was extremely fast. Adjusted to a more manageable base value.
-TANK_ROTATE_SPEED = 100.0 # This was 400.0. Adjusted for better control.
-TURRET_ROTATE_SPEED = 120.0 # This was 420.0. Adjusted for better control.
+TANK_MOVE_SPEED = 800.0 
+TURRET_ROTATE_SPEED = 420.0 
 
-# --- NEW: Tank Upgrade System ---
+#  Tank Upgrade System 
 # These variables will store the player's upgrades and their costs.
 upgrade_level_armor = 0
 upgrade_level_cannon = 0
@@ -51,8 +50,8 @@ enemies = []
 ENEMY_RADIUS = 25.0
 TANK_COLLISION_RADIUS = 35.0
 ENEMY_FIRE_COOLDOWN = 2.0
-# --- NEW: Boss Tank Logic ---
-boss_active = False # A flag to know if a boss is currently in the wave
+# ---Boss Tank Logic ---
+boss_active = False # A flag to know if a boss is currently in the wave since boss will be available after 3n waves
 
 # --- Obstacle Properties ---
 obstacles = []
@@ -60,27 +59,27 @@ OBSTACLE_COUNT = 8
 OBSTACLE_RADIUS = 20.0
 OBSTACLE_COLLISION_RADIUS = 25.0
 
-# --- Power-Up Properties (from your original code, kept as is) ---
+# --- Power-Up Properties ---
 power_ups = []
 POWER_UP_SPAWN_RATE = 10.0
 last_power_up_spawn_time = 0.0
 active_power_ups = {}
 
-# --- Cheat Mode Properties (from your original code, kept as is) ---
+# --- Cheat Mode Properties  ---
 cheat_infinite_shells = False
 cheat_auto_turret = False
 emp_blast_cooldown = 10.0
 last_emp_blast_time = 0.0
 frozen_enemies = {}
 
-# --- NEW: Environmental Hazards ---
+# --- Environmental Hazards ---
 # A list to store hazards like lava pits
 hazards = []
 HAZARD_COUNT = 3
 HAZARD_RADIUS = 35.0
 HAZARD_DAMAGE_PER_SECOND = 25.0
 
-# --- NEW: Dynamic Weather Effects ---
+# ---Dynamic Weather Effects ---
 # A list to store raindrop particles
 raindrops = []
 MAX_RAINDROPS = 250
@@ -96,7 +95,7 @@ last_frame_time = 0.0
 delta_time = 0.0
 timeOfDay = 0.0
 
-# --- Drawing Functions (Your original functions are unchanged unless marked) ---
+# --- Drawing Functions ---
 
 def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
     glColor3f(1, 1, 1)
@@ -151,7 +150,7 @@ def draw_player_tank():
     glColor3f(0.25, 0.55, 0.25); glPushMatrix(); glTranslatef(0, 15, 0); glScalef(20, 10, 20); glutSolidCube(1); glPopMatrix()
     glColor3f(0.4, 0.4, 0.4); glPushMatrix(); glTranslatef(0, 17, 10); gluCylinder(gluNewQuadric(), 4, 4, 40, 10, 10); glPopMatrix()
     glPopMatrix(); glPopMatrix()
-    # MODIFIED: Now uses max_player_health for the health bar
+    #  max_player_health for the health bar
     draw_health_bar_3d(tank_pos[0], tank_pos[1] + 40, tank_pos[2], player_health, max_player_health, 25, 3)
 
 def draw_bullets():
@@ -165,7 +164,7 @@ def draw_bullets():
 def draw_enemy_tanks():
     for enemy in enemies:
         glPushMatrix(); glTranslatef(enemy['pos'][0], enemy['pos'][1], enemy['pos'][2]); glRotatef(enemy['angle'], 0, 1, 0)
-        # --- NEW: Boss Tank Visuals ---
+        # ---Boss Tank Visuals ---
         # This new block checks if the enemy is a boss and makes it look different
         if enemy['type'] == 'boss':
             glColor3f(0.2, 0.0, 0.2) # Dark Purple for boss
@@ -185,17 +184,17 @@ def draw_enemy_tanks():
         glColor3f(0.4, 0.4, 0.4)
         glPushMatrix(); glTranslatef(0, 17, 10); gluCylinder(gluNewQuadric(), 4, 4, 40, 10, 10); glPopMatrix()
         glPopMatrix()
-        # --- NEW: Health bar logic for the boss ---
+        # --- Health bar logic for the boss ---
         if enemy['type'] == 'boss': max_health = 200; y_offset = 60; health_bar_width = 40
         elif enemy['type'] == 'juggernaut': max_health = 20; y_offset = 50; health_bar_width = 30
         else: max_health = 10; y_offset = 40; health_bar_width = 25
         draw_health_bar_3d(enemy['pos'][0], enemy['pos'][1] + y_offset, enemy['pos'][2], enemy['health'], max_health, health_bar_width, 4)
 
-def draw_enemy_shadows(): # Unchanged
+def draw_enemy_shadows(): 
     glColor3f(0.3, 0.3, 0.3)
     for enemy in enemies:
         scale_factor = 1.2 if enemy['type'] == 'juggernaut' else 1.0
-        # NEW: Added scale factor for boss shadow
+        # Added scale factor for boss shadow
         if enemy['type'] == 'boss': scale_factor = 1.5
         glPushMatrix(); glTranslatef(enemy['pos'][0], 0.5, enemy['pos'][2]); glRotatef(enemy['angle'], 0, 1, 0); glScalef(scale_factor, 1.0, scale_factor)
         glBegin(GL_QUADS); glVertex3f(-20, 0, -35); glVertex3f(20, 0, -35); glVertex3f(20, 0, 35); glVertex3f(-20, 0, 35); glEnd()
@@ -204,7 +203,7 @@ def draw_enemy_shadows(): # Unchanged
         # glBegin(GL_QUADS); glVertex3f(-15, 0, -15); glVertex3f(15, 0, -15); glVertex3f(15, 0, 15); glVertex3f(-15, 0, 15); glEnd()
         glPopMatrix()
 
-def draw_obstacles(): # Unchanged
+def draw_obstacles(): 
     for obstacle in obstacles:
         health_ratio = obstacle['health'] / 30.0
         if health_ratio > 0.66: glColor3f(0.5, 0.5, 0.5)
@@ -212,14 +211,14 @@ def draw_obstacles(): # Unchanged
         else: glColor3f(0.4, 0.1, 0.1)
         glPushMatrix(); glTranslatef(obstacle['pos'][0], 15, obstacle['pos'][2]); glScalef(30, 30, 30); glutSolidCube(1); glPopMatrix()
 
-def draw_obstacle_shadows(): # Unchanged
+def draw_obstacle_shadows(): 
     glColor3f(0.3, 0.3, 0.3)
     for obstacle in obstacles:
         glPushMatrix(); glTranslatef(obstacle['pos'][0]+2, 0.5, obstacle['pos'][2]+2)
         glBegin(GL_QUADS); glVertex3f(-15, 0, -15); glVertex3f(15, 0, -15); glVertex3f(15, 0, 15); glVertex3f(-15, 0, 15); glEnd()
         glPopMatrix()
 
-def draw_power_ups(): # Unchanged
+def draw_power_ups(): 
     for power_up in power_ups:
         glPushMatrix(); glTranslatef(power_up['pos'][0], 15, power_up['pos'][2]); glRotatef(time.time() * 100, 0, 1, 0)
         if power_up['type'] == 'health': glColor3f(0.1, 1.0, 0.1); glutSolidCube(15)
@@ -260,7 +259,7 @@ def draw_power_up_shadows():
         
         glPopMatrix()
 
-# --- NEW: Drawing function for Environmental Hazards ---
+# --- Drawing function for Environmental Hazards ---
 def draw_hazards():
     """Draws lava pits on the ground using simple quads."""
     for hazard in hazards:
@@ -276,7 +275,7 @@ def draw_hazards():
         glEnd()
         glPopMatrix()
 
-# --- NEW: Drawing function for Dynamic Weather ---
+# --- Drawing function for Dynamic Weather ---
 def draw_rain():
     """Draws rain using simple lines."""
     if not is_raining: return
@@ -304,26 +303,26 @@ def reset_game():
     cheat_infinite_shells = False; cheat_auto_turret = False
     last_power_up_spawn_time = time.time()
     
-    # NEW: Reset upgrade system variables
+    # Reset upgrade system variables
     max_player_health = 100; upgrade_level_armor = 0; upgrade_level_cannon = 0; upgrade_level_speed = 0
     upgrade_cost_armor = 50; upgrade_cost_cannon = 50; upgrade_cost_speed = 50
-    player_fire_cooldown = 0.5; TANK_MOVE_SPEED = 150.0; TANK_ROTATE_SPEED = 100.0
+    player_fire_cooldown = 0.5; TANK_MOVE_SPEED = 800.0; TANK_ROTATE_SPEED = 400.0
     boss_active = False
     
-    # NEW: Spawn hazards at the start of the game
+    # Spawn hazards at the start of the game
     hazards.clear()
     spawn_hazards()
 
     spawn_obstacles()
     start_next_wave()
 
-def spawn_obstacles(): # Unchanged
+def spawn_obstacles():
     obstacles.clear()
     for _ in range(OBSTACLE_COUNT):
         x = random.uniform(-ARENA_SIZE + 50, ARENA_SIZE - 50); z = random.uniform(-ARENA_SIZE + 50, ARENA_SIZE - 50)
         obstacles.append({'pos': [x, 0, z], 'health': 30})
 
-# --- NEW: Spawning function for Environmental Hazards ---
+# --- Spawning function for Environmental Hazards ---
 def spawn_hazards():
     for _ in range(HAZARD_COUNT):
         x = random.uniform(-ARENA_SIZE + 80, ARENA_SIZE - 80)
@@ -331,22 +330,22 @@ def spawn_hazards():
         hazards.append({'pos': [x, 0, z]})
 
 def start_next_wave():
-    global current_wave, boss_active # MODIFIED: Added boss_active
+    global current_wave, boss_active # Added boss_active
     current_wave += 1
     print(f"--- Starting Wave {current_wave} ---")
     
-    # --- NEW: Boss Wave Logic ---
+    # ---Boss Wave Logic ---
     # This is a new check. If it's a boss wave, it calls a different spawn function.
     if current_wave % 3 == 0:
         boss_active = True
         spawn_boss()
     else:
-        # This is your original logic for normal waves.
+        # logic for normal waves.
         boss_active = False
         for i in range(current_wave):
             spawn_enemy(i)
 
-# --- NEW: Spawning function for the Boss ---
+# --- Spawning function for the Boss ---
 def spawn_boss():
     enemies.clear() # Clear any remaining enemies
     enemies.append({
@@ -359,14 +358,14 @@ def spawn_boss():
         'health': 200
     })
 
-def spawn_enemy(enemy_id): # Unchanged
+def spawn_enemy(enemy_id):
     x = random.uniform(-ARENA_SIZE + 30, ARENA_SIZE - 30); z = random.uniform(-ARENA_SIZE + 30, ARENA_SIZE - 30)
     enemy_type = 'juggernaut' if current_wave >= 3 and random.random() < 0.3 else 'scout'
     if enemy_type == 'juggernaut': speed = 15.0 + (current_wave * 1.0); health = 20
     else: speed = 25.0 + (current_wave * 2.0); health = 10
     enemies.append({'id': enemy_id, 'pos': [x, 10, z], 'angle': random.uniform(0, 360), 'last_fire_time': time.time(), 'speed': speed, 'type': enemy_type, 'health': health})
 
-def update_bullets(): # Unchanged
+def update_bullets():
     all_bullets = player_bullets + enemy_bullets
     for bullet in all_bullets[:]:
         bullet['pos'][0] += bullet['dir'][0] * BULLET_SPEED * delta_time; bullet['pos'][2] += bullet['dir'][2] * BULLET_SPEED * delta_time
@@ -374,7 +373,7 @@ def update_bullets(): # Unchanged
             if bullet in player_bullets: player_bullets.remove(bullet)
             if bullet in enemy_bullets: enemy_bullets.remove(bullet)
 
-def update_enemies(): # Unchanged
+def update_enemies(): 
     current_time = time.time()
     for enemy in enemies:
         if enemy['id'] in frozen_enemies and current_time > frozen_enemies[enemy['id']]:
@@ -390,7 +389,7 @@ def update_enemies(): # Unchanged
             enemy_fire_bullet(enemy)
             enemy['last_fire_time'] = current_time
 
-def update_power_ups(): # Unchanged
+def update_power_ups():
     global last_power_up_spawn_time, active_power_ups
     current_time = time.time()
     if current_time - last_power_up_spawn_time > POWER_UP_SPAWN_RATE:
@@ -399,14 +398,14 @@ def update_power_ups(): # Unchanged
         if current_time > active_power_ups[power_up_type]:
             print(f"{power_up_type.replace('_', ' ').title()} expired!"); del active_power_ups[power_up_type]
 
-def spawn_power_up(): # Unchanged
+def spawn_power_up(): 
     if len(power_ups) >= 3: return
     x = random.uniform(-ARENA_SIZE + 50, ARENA_SIZE - 50); z = random.uniform(-ARENA_SIZE + 50, ARENA_SIZE - 50)
     power_up_type = random.choice(['health', 'rapid_fire', 'speed'])
     power_ups.append({'pos': [x, 0, z], 'type': power_up_type})
     print(f"Spawned a {power_up_type.replace('_', ' ')} power-up!")
 
-def resolve_collisions(): # Unchanged
+def resolve_collisions(): 
     all_colliders = [{'obj': 'player', 'pos': tank_pos, 'radius': TANK_COLLISION_RADIUS}]
     for i, enemy in enumerate(enemies): all_colliders.append({'obj': 'enemy', 'id': i, 'pos': enemy['pos'], 'radius': TANK_COLLISION_RADIUS})
     for i in range(len(all_colliders)):
@@ -428,7 +427,7 @@ def resolve_collisions(): # Unchanged
                 tank['pos'][0] += push_x; tank['pos'][2] += push_z
     buffer = 25; tank_pos[0] = max(-ARENA_SIZE + buffer, min(ARENA_SIZE - buffer, tank_pos[0])); tank_pos[2] = max(-ARENA_SIZE + buffer, min(ARENA_SIZE - buffer, tank_pos[2]))
 
-def trigger_camera_shake(intensity=15.0, duration=0.3): # Unchanged
+def trigger_camera_shake(intensity=15.0, duration=0.3): 
     global camera_shake_intensity, camera_shake_duration, camera_shake_start_time
     camera_shake_intensity = intensity; camera_shake_duration = duration; camera_shake_start_time = time.time()
 
@@ -443,7 +442,7 @@ def check_bullet_collisions():
                 enemy['health'] -= 10
                 if enemy['health'] <= 0:
                     if enemy in enemies: enemies.remove(enemy)
-                    # --- NEW: Bonus score for killing boss ---
+                    # --- Bonus score for killing boss ---
                     if enemy['type'] == 'boss':
                         global boss_active
                         score += 500
@@ -477,19 +476,19 @@ def check_bullet_collisions():
     if not enemies and not game_over:
         start_next_wave()
 
-def check_power_up_collection(): # Unchanged
+def check_power_up_collection(): 
     global player_health
     for power_up in power_ups[:]:
         dist_sq = (tank_pos[0] - power_up['pos'][0])**2 + (tank_pos[2] - power_up['pos'][2])**2
         if dist_sq < 30**2: apply_power_up(power_up['type']); power_ups.remove(power_up)
 
-def apply_power_up(power_up_type): # Unchanged
+def apply_power_up(power_up_type): 
     global player_health
     print(f"Collected {power_up_type.replace('_', ' ')}!")
     if power_up_type == 'health': player_health = min(100, player_health + 25)
     else: active_power_ups[power_up_type] = time.time() + 10
 
-def fire_bullet(): # Unchanged
+def fire_bullet(): 
     final_angle = tank_angle + turret_angle; final_angle_rad = math.radians(final_angle)
     dir_x, dir_z = math.sin(final_angle_rad), math.cos(final_angle_rad); cannon_length = 50.0
     offset_x, offset_z = cannon_length * dir_x, cannon_length * dir_z
@@ -500,7 +499,7 @@ def enemy_fire_bullet(enemy):
     angle_rad = math.radians(enemy['angle']); dir_x, dir_z = math.sin(angle_rad), math.cos(angle_rad)
     cannon_length = 50.0; offset_x, offset_z = cannon_length * dir_x, cannon_length * dir_z
     start_x = enemy['pos'][0] + offset_x; start_z = enemy['pos'][2] + offset_z; start_y = 17
-    # --- NEW: Boss unique attack ---
+    # --- Boss unique attack ---
     # If the enemy is a boss, it fires a 3-shot spread instead of one bullet.
     if enemy['type'] == 'boss':
         for angle_offset in [-15, 0, 15]:
@@ -509,17 +508,17 @@ def enemy_fire_bullet(enemy):
             bullet_dir_z = math.cos(offset_rad)
             enemy_bullets.append({'pos': [start_x, start_y, start_z], 'dir': [bullet_dir_x, 0, bullet_dir_z]})
     else:
-        # This is your original firing logic for normal enemies.
+        # logic for normal enemies.
         enemy_bullets.append({'pos': [start_x, start_y, start_z], 'dir': [dir_x, 0, dir_z]})
 
 def dayNightCycle():
-    global timeOfDay, is_raining # MODIFIED: Added is_raining
+    global timeOfDay, is_raining # Added is_raining
     timeOfDay += 0.002
     if timeOfDay > 2 * math.pi: timeOfDay -= 2 * math.pi
     r = 0.1 + 0.4 * (math.sin(timeOfDay) * 0.5 + 0.5); g = 0.2 + 0.5 * (math.sin(timeOfDay) * 0.5 + 0.5); b = 0.3 + 0.6 * (math.sin(timeOfDay) * 0.5 + 0.5)
     r = max(0.1, min(1.0, r)); g = max(0.2, min(1.0, g)); b = max(0.3, min(1.0, b))
     
-    # --- NEW: Weather control logic ---
+    # --- Weather control logic ---
     # It will only rain during the "night" part of the cycle
     if (math.sin(timeOfDay) * 0.5 + 0.5) < 0.25:
         is_raining = True
@@ -527,9 +526,9 @@ def dayNightCycle():
         is_raining = False
 
     glClearColor(r, g, b, 1.0)
-    # MODIFIED: Removed glClear from here to handle it in showScreen, which is better practice.
+    # Removed glClear from here to handle it in showScreen, which is better practice.
 
-# --- NEW: Logic function for Weather ---
+# ---Logic function for Weather ---
 def update_rain():
     """Creates, moves, and recycles raindrops."""
     if not is_raining:
@@ -550,7 +549,7 @@ def update_rain():
             drop['pos'][0] = random.uniform(-ARENA_SIZE, ARENA_SIZE)
             drop['pos'][2] = random.uniform(-ARENA_SIZE, ARENA_SIZE)
 
-# --- NEW: Logic function for Environmental Hazards ---
+# ---Logic function for Environmental Hazards ---
 def check_hazard_collisions():
     """Checks if the player is touching a hazard and applies damage."""
     global player_health
@@ -573,7 +572,7 @@ def keyboardListener(key, x, y):
 
     if game_over and key != b'r': return
     
-    # MODIFIED: Used the TANK_MOVE_SPEED variable for movement
+    # Used the TANK_MOVE_SPEED variable for movement
     speed_multiplier = 1.5 if 'speed' in active_power_ups else 1.0
     move_amount = TANK_MOVE_SPEED * delta_time * speed_multiplier
     rotate_amount = TANK_ROTATE_SPEED * delta_time * speed_multiplier
@@ -584,7 +583,7 @@ def keyboardListener(key, x, y):
     if key == b'd': tank_angle -= rotate_amount
     if key == b'r': reset_game()
 
-    # Cheats (unchanged)
+    # Cheats 
     if key == b'1': cheat_infinite_shells = not cheat_infinite_shells; print(f"Cheat - Infinite Shells: {'ON' if cheat_infinite_shells else 'OFF'}")
     if key == b'2':
         current_time = time.time()
@@ -595,7 +594,7 @@ def keyboardListener(key, x, y):
         else: print("EMP Blast on cooldown.")
     if key == b'3': cheat_auto_turret = not cheat_auto_turret; print(f"Cheat - Auto Turret: {'ON' if cheat_auto_turret else 'OFF'}")
 
-    # --- NEW: Tank Upgrade System ---
+    # ---Tank Upgrade System ---
     # This block handles key presses for buying upgrades
     if key == b'u': # Upgrade Armor
         if score >= upgrade_cost_armor:
@@ -621,7 +620,7 @@ def keyboardListener(key, x, y):
             upgrade_cost_speed = int(upgrade_cost_speed * 1.5)
             print("SPEED UPGRADED!")
 
-def specialKeyListener(key, x, y): # Unchanged
+def specialKeyListener(key, x, y): 
     global turret_angle
     if game_over: return
     rotate_amount = TURRET_ROTATE_SPEED * delta_time
@@ -632,21 +631,21 @@ def mouseListener(button, state, x, y):
     global last_player_fire_time
     if game_over: return
     current_time = time.time()
-    # MODIFIED: Uses the player_fire_cooldown variable, which can be upgraded
+    # Uses the player_fire_cooldown variable, which can be upgraded
     cooldown = 0 if cheat_infinite_shells else (player_fire_cooldown / 2.0 if 'rapid_fire' in active_power_ups else player_fire_cooldown)
     if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN and current_time - last_player_fire_time > cooldown:
         fire_bullet(); last_player_fire_time = current_time
 
 # --- Core OpenGL Functions ---
 
-def reshape(w, h): # Unchanged
+def reshape(w, h): 
     if h == 0: h = 1
     glViewport(0, 0, w, h)
     glMatrixMode(GL_PROJECTION); glLoadIdentity()
     aspect_ratio = w / h; gluPerspective(fovY, aspect_ratio, 1.0, 1000.0)
     glMatrixMode(GL_MODELVIEW)
 
-def setupCamera(): # Unchanged
+def setupCamera(): 
     global camera_shake_intensity, camera_shake_duration, camera_shake_start_time
     glLoadIdentity()
     shake_x, shake_y, shake_z = 0, 0, 0
@@ -673,7 +672,7 @@ def idle():
             turret_angle = target_angle - tank_angle
         update_bullets(); update_enemies(); update_power_ups()
         
-        # --- NEW: Call update functions for new features ---
+        # --- Call update functions for new features ---
         update_rain()
         check_hazard_collisions()
         
@@ -693,18 +692,18 @@ def showScreen():
     
     # Draw Arena and ground elements
     draw_arena()
-    draw_hazards() # NEW: Draw lava pits
+    draw_hazards() # Draw lava pits
 
     # Draw Tanks and other objects
     if not game_over: draw_player_tank()
     draw_bullets(); draw_enemy_tanks(); draw_obstacles(); draw_power_ups()
 
     # Draw weather effect last so it's on top of everything
-    draw_rain() # NEW: Draw rain
+    draw_rain() #Draw rain
 
     # UI Text
     draw_text(10, 770, f"Score: {score}")
-    # MODIFIED: Health text shows max health
+    #  Health text shows max health
     draw_text(10, 740, f"Health: {int(player_health)}/{max_player_health}")
     draw_text(10, 710, f"Wave: {current_wave}")
     y_offset = 680
@@ -712,11 +711,11 @@ def showScreen():
         remaining_time = max(0, end_time - time.time())
         draw_text(10, y_offset, f"{power_up.replace('_', ' ').title()}: {remaining_time:.1f}s"); y_offset -= 30
     
-    # --- NEW: UI for Boss Wave ---
+    # ---UI for Boss Wave ---
     if boss_active:
         draw_text(420, 770, "!!! BOSS INBOUND !!!")
 
-    # --- NEW: UI for Upgrade System ---
+    # ---UI for Upgrade System ---
     draw_text(750, 770, "UPGRADES (Score to Buy)")
     draw_text(750, 740, f"[U] Armor (Lvl {upgrade_level_armor}): {upgrade_cost_armor}")
     draw_text(750, 710, f"[I] Cannon (Lvl {upgrade_level_cannon}): {upgrade_cost_cannon}")
