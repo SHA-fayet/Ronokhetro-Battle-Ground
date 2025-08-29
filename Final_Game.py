@@ -139,7 +139,7 @@ def draw_player_shadow():
     glBegin(GL_QUADS); glVertex3f(-35, 0, -40); glVertex3f(-20, 0, -40); glVertex3f(-20, 0, 40); glVertex3f(-35, 0, 40); glEnd()
     glBegin(GL_QUADS); glVertex3f(20, 0, -40); glVertex3f(35, 0, -40); glVertex3f(35, 0, 40); glVertex3f(20, 0, 40); glEnd()
     glPushMatrix(); glRotatef(turret_angle, 0, 1, 0)
-    glBegin(GL_QUADS); glVertex3f(-15, 0, -15); glVertex3f(15, 0, -15); glVertex3f(15, 0, 15); glVertex3f(-15, 0, 15); glEnd()
+    # glBegin(GL_QUADS); glVertex3f(-15, 0, -15); glVertex3f(15, 0, -15); glVertex3f(15, 0, 15); glVertex3f(-15, 0, 15); glEnd()
     glPopMatrix(); glPopMatrix()
 
 def draw_player_tank():
@@ -201,7 +201,7 @@ def draw_enemy_shadows(): # Unchanged
         glBegin(GL_QUADS); glVertex3f(-20, 0, -35); glVertex3f(20, 0, -35); glVertex3f(20, 0, 35); glVertex3f(-20, 0, 35); glEnd()
         glBegin(GL_QUADS); glVertex3f(-35, 0, -40); glVertex3f(-20, 0, -40); glVertex3f(-20, 0, 40); glVertex3f(-35, 0, 40); glEnd()
         glBegin(GL_QUADS); glVertex3f(20, 0, -40); glVertex3f(35, 0, -40); glVertex3f(35, 0, 40); glVertex3f(20, 0, 40); glEnd()
-        glBegin(GL_QUADS); glVertex3f(-15, 0, -15); glVertex3f(15, 0, -15); glVertex3f(15, 0, 15); glVertex3f(-15, 0, 15); glEnd()
+        # glBegin(GL_QUADS); glVertex3f(-15, 0, -15); glVertex3f(15, 0, -15); glVertex3f(15, 0, 15); glVertex3f(-15, 0, 15); glEnd()
         glPopMatrix()
 
 def draw_obstacles(): # Unchanged
@@ -215,7 +215,7 @@ def draw_obstacles(): # Unchanged
 def draw_obstacle_shadows(): # Unchanged
     glColor3f(0.3, 0.3, 0.3)
     for obstacle in obstacles:
-        glPushMatrix(); glTranslatef(obstacle['pos'][0], 0.5, obstacle['pos'][2])
+        glPushMatrix(); glTranslatef(obstacle['pos'][0]+2, 0.5, obstacle['pos'][2]+2)
         glBegin(GL_QUADS); glVertex3f(-15, 0, -15); glVertex3f(15, 0, -15); glVertex3f(15, 0, 15); glVertex3f(-15, 0, 15); glEnd()
         glPopMatrix()
 
@@ -227,16 +227,38 @@ def draw_power_ups(): # Unchanged
         elif power_up['type'] == 'speed': glColor3f(0.1, 0.1, 1.0); gluSphere(gluNewQuadric(), 10, 10, 10)
         glPopMatrix()
 
-def draw_power_up_shadows(): # Unchanged
+def draw_power_up_shadows():
+    """Draws shadows for all power-ups on the ground."""
+    # Set shadow color (dark gray/black)
     glColor3f(0.3, 0.3, 0.3)
+    
     for power_up in power_ups:
-        glPushMatrix(); glTranslatef(power_up['pos'][0], 0.5, power_up['pos'][2])
-        glBegin(GL_TRIANGLE_FAN); glVertex3f(0, 0, 0)
-        radius = 10; segments = 32
-        for i in range(segments + 1):
-            angle = 2.0 * math.pi * i / segments
-            x = radius * math.cos(angle); z = radius * math.sin(angle); glVertex3f(x, 0, z)
-        glEnd(); glPopMatrix()
+        glPushMatrix()
+        glTranslatef(power_up['pos'][0], 0.5, power_up['pos'][2])  # Slightly above ground
+        
+        # Draw power-up shadow as a circle using GL_TRIANGLES
+        radius = 10
+        segments = 32
+        
+        glBegin(GL_TRIANGLES)
+        for i in range(segments):
+            # Calculate angles for current and next vertex
+            angle1 = 2.0 * math.pi * i / segments
+            angle2 = 2.0 * math.pi * (i + 1) / segments
+            
+            # Calculate vertices
+            x1 = radius * math.cos(angle1)
+            z1 = radius * math.sin(angle1)
+            x2 = radius * math.cos(angle2)
+            z2 = radius * math.sin(angle2)
+            
+            # Draw triangle: center, vertex1, vertex2
+            glVertex3f(0, 0, 0)      # Center
+            glVertex3f(x1, 0, z1)    # First vertex
+            glVertex3f(x2, 0, z2)    # Second vertex
+        glEnd()
+        
+        glPopMatrix()
 
 # --- NEW: Drawing function for Environmental Hazards ---
 def draw_hazards():
