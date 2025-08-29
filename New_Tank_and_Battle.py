@@ -404,42 +404,61 @@ def spawn_power_up():
     power_ups.append({'pos': [x, 0, z], 'type': power_up_type})
     print(f"Spawned a {power_up_type.replace('_', ' ')} power-up!")
 
-
+# --- NEW: Corrected Collision Resolution ---
 def resolve_collisions():
     """Checks and resolves overlaps between all tanks and obstacles."""
-    all_tanks = [{'pos': tank_pos, 'radius': TANK_COLLISION_RADIUS}] + [{'pos': e['pos'], 'radius': TANK_COLLISION_RADIUS} for e in enemies]
-    
+    # Create a list of all dynamic objects that can collide
+    all_colliders = [{'obj': 'player', 'pos': tank_pos, 'radius': TANK_COLLISION_RADIUS}]
+    for i, enemy in enumerate(enemies):
+        all_colliders.append({'obj': 'enemy', 'id': i, 'pos': enemy['pos'], 'radius': TANK_COLLISION_RADIUS})
+
     # Tank vs Tank
-    for i in range(len(all_tanks)):
-        for j in range(i + 1, len(all_tanks)):
-            obj_a = all_tanks[i]
-            obj_b = all_tanks[j]
+    for i in range(len(all_colliders)):
+        for j in range(i + 1, len(all_colliders)):
+            obj_a = all_colliders[i]
+            obj_b = all_colliders[j]
+            
             dist_x = obj_a['pos'][0] - obj_b['pos'][0]
             dist_z = obj_a['pos'][2] - obj_b['pos'][2]
             dist = math.sqrt(dist_x**2 + dist_z**2)
             
-            if dist < obj_a['radius'] + obj_b['radius'] and dist > 0:
-                overlap = (obj_a['radius'] + obj_b['radius']) - dist
+            min_dist = obj_a['radius'] + obj_b['radius']
+            
+            if dist < min_dist and dist > 0:
+                overlap = min_dist - dist
                 push_x = (dist_x / dist) * (overlap / 2)
                 push_z = (dist_z / dist) * (overlap / 2)
+                
+                # Apply push to object A
                 obj_a['pos'][0] += push_x
                 obj_a['pos'][2] += push_z
+                
+                # Apply push to object B
                 obj_b['pos'][0] -= push_x
                 obj_b['pos'][2] -= push_z
     
     # Tanks vs Obstacles
-    for tank in all_tanks:
+    for tank in all_colliders:
         for obstacle in obstacles:
             dist_x = tank['pos'][0] - obstacle['pos'][0]
             dist_z = tank['pos'][2] - obstacle['pos'][2]
             dist = math.sqrt(dist_x**2 + dist_z**2)
             
-            if dist < tank['radius'] + OBSTACLE_COLLISION_RADIUS and dist > 0:
-                overlap = (tank['radius'] + OBSTACLE_COLLISION_RADIUS) - dist
+            min_dist = tank['radius'] + OBSTACLE_COLLISION_RADIUS
+            
+            if dist < min_dist and dist > 0:
+                overlap = min_dist - dist
                 push_x = (dist_x / dist) * overlap
                 push_z = (dist_z / dist) * overlap
                 tank['pos'][0] += push_x
                 tank['pos'][2] += push_z
+
+    # --- NEW: Final Boundary Check for Player ---
+    # This ensures the player is never pushed out of the arena
+    buffer = 25
+    tank_pos[0] = max(-ARENA_SIZE + buffer, min(ARENA_SIZE - buffer, tank_pos[0]))
+    tank_pos[2] = max(-ARENA_SIZE + buffer, min(ARENA_SIZE - buffer, tank_pos[2]))
+
 
 def check_bullet_collisions():
     """Checks for all bullet-related collisions."""
@@ -521,8 +540,15 @@ def enemy_fire_bullet(enemy):
     dir_x, dir_z = math.sin(angle_rad), math.cos(angle_rad)
     cannon_length = 50.0
     offset_x, offset_z = cannon_length * dir_x, cannon_length * dir_z
-    start_x, start_z, start_y = enemy['pos'][0] + offset_x, enemy['pos'][2] + offset_z, 17
-    enemy_bullets.append({'pos': [start_x, start_y, start_y], 'dir': [dir_x, 0, dir_z]})
+    
+    start_x = enemy['pos'][0] + offset_x
+    start_z = enemy['pos'][2] + offset_z
+    start_y = 17 # Bullet height
+
+    enemy_bullets.append({
+        'pos': [start_x, start_y, start_z], 
+        'dir': [dir_x, 0, dir_z]
+    })
 
 # --- Input Handlers ---
 
@@ -544,10 +570,6 @@ def keyboardListener(key, x, y):
         tank_pos[0] -= math.sin(angle_rad) * move_amount
         tank_pos[2] -= math.cos(angle_rad) * move_amount
     
-    buffer = 25
-    tank_pos[0] = max(-ARENA_SIZE + buffer, min(ARENA_SIZE - buffer, tank_pos[0]))
-    tank_pos[2] = max(-ARENA_SIZE + buffer, min(ARENA_SIZE - buffer, tank_pos[2]))
-
     if key == b'a':
         tank_angle += rotate_amount
     if key == b'd':
@@ -569,7 +591,6 @@ def keyboardListener(key, x, y):
     if key == b'3':
         cheat_auto_turret = not cheat_auto_turret
         print(f"Cheat - Auto Turret: {'ON' if cheat_auto_turret else 'OFF'}")
-
 
 def specialKeyListener(key, x, y):
     """Handles special key inputs for turret rotation."""
@@ -626,7 +647,6 @@ def idle():
             dir_z = closest_enemy['pos'][2] - tank_pos[2]
             target_angle = -math.degrees(math.atan2(dir_z, dir_x)) + 90
             turret_angle = target_angle - tank_angle
-
 
         update_bullets()
         update_enemies()
