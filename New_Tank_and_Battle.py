@@ -4,7 +4,7 @@ from OpenGL.GLU import *
 import math
 import time
 import random
-
+from OpenGL.GLUT import GLUT_BITMAP_HELVETICA_18
 # --- Game Configuration & State ---
 
 # Camera-related variables
@@ -704,3 +704,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
